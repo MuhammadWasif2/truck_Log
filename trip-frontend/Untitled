@@ -1,0 +1,32 @@
+import { useState } from "react";
+import TripForm from "./components/TripForm";
+import SummaryCards from "./components/SummaryCards";
+import DailyLogs from "./components/DailyLogs";
+
+function App() {
+  const [tripData, setTripData] = useState(null);
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white">
+      <header className="text-center py-6 shadow-lg bg-slate-900">
+        <h1 className="text-4xl font-bold">Truck Trip Planner & ELD</h1>
+        <p className="text-slate-400 mt-2">
+          Route Optimization + HOS Compliance
+        </p>
+      </header>
+
+      <main className="max-w-6xl mx-auto p-6">
+        <TripForm setTripData={setTripData} />
+
+        {tripData && (
+          <>
+            <SummaryCards tripData={tripData} />
+            <DailyLogs dailyLogs={tripData.daily_logs} />
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default App;
