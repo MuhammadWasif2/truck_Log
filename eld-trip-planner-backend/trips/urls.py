@@ -1,6 +1,7 @@
-from django.urls import path
-from .views import PlanTripView
+from django.contrib import admin
+from django.urls import path, include
 
 urlpatterns = [
-    path("plan-trip/", PlanTripView.as_view(), name="plan-trip"),
+    path("admin/", admin.site.urls),
+    path("api/", include("trips.urls")),
 ]
