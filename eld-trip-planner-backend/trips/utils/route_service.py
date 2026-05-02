@@ -4,6 +4,15 @@ from django.conf import settings
 GEOCODE_URL = "https://api.openrouteservice.org/geocode/search"
 DIRECTION_BASE_URL = "https://api.openrouteservice.org/v2/directions"
 
+def _require_ors_key():
+    key = getattr(settings, "ORS_API_KEY", None)
+    if not key:
+        raise ValueError(
+            "Server is missing ORS_API_KEY (OpenRouteService). "
+            "Set it in the backend environment variables and redeploy."
+        )
+    return key
+
 
 def _safe_json(response):
     try:
@@ -12,8 +21,9 @@ def _safe_json(response):
         return {}
 
 def get_coordinates(location):
+    ors_key = _require_ors_key()
     params = {
-        "api_key": settings.ORS_API_KEY,
+        "api_key": ors_key,
         "text": location,
         "size": 1
     }
@@ -22,7 +32,16 @@ def get_coordinates(location):
     data = _safe_json(response)
 
     if response.status_code != 200:
-        raise ValueError(f"Geocoding failed for location: {location}")
+        message = (
+            data.get("error", {}).get("message")
+            or data.get("message")
+            or response.text[:300]
+            or "Unknown error"
+        )
+        raise ValueError(
+            f"Geocoding failed for location: {location} "
+            f"(OpenRouteService HTTP {response.status_code}: {message})"
+        )
 
     features = data.get("features")
     if not features:
@@ -33,8 +52,9 @@ def get_coordinates(location):
 
 
 def get_route(start, end):
+    ors_key = _require_ors_key()
     headers = {
-        "Authorization": settings.ORS_API_KEY,
+        "Authorization": ors_key,
         "Content-Type": "application/json"
     }
 
@@ -63,4 +83,12 @@ def get_route(start, end):
                 "geometry": routes[0]["geometry"]
             }
 
-    raise ValueError("Unable to build route between supplied locations.")
+    last_message = (
+        data.get("error", {}).get("message")
+        if isinstance(data, dict)
+        else None
+    ) or (response.text[:300] if response is not None else None)
+    detail = f" Last response: HTTP {getattr(response, 'status_code', 'unknown')}."
+    if last_message:
+        detail += f" {last_message}"
+    raise ValueError("Unable to build route between supplied locations." + detail)
