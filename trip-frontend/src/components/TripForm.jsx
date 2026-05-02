@@ -25,17 +25,30 @@ function TripForm({ setTripData }) {
     setError("");
 
     try {
-      const data = await planTrip({
+      const payload = {
         ...formData,
         cycle_used: Number(formData.cycle_used),
-      });
+      };
+
+      if (Number.isNaN(payload.cycle_used)) {
+        setError("Cycle used must be a valid number.");
+        return;
+      }
+
+      // Helps debug production 400/500 payload issues
+      console.log("planTrip payload:", payload);
+
+      const data = await planTrip(payload);
 
       setTripData(data);
     } catch (err) {
-      setError(
-        err.response?.data?.error ||
-          "Failed to plan trip. Check backend/server."
-      );
+      const data = err.response?.data;
+      const message =
+        (data && typeof data === "object" && "error" in data && data.error) ||
+        (data && typeof data === "object" ? JSON.stringify(data) : null) ||
+        err.message ||
+        "Failed to plan trip. Check backend/server.";
+      setError(message);
     } finally {
       setLoading(false);
     }
