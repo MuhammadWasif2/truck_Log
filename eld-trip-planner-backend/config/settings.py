@@ -17,9 +17,12 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "unsafe-dev-secret-key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
+# Default includes localhost so `runserver` works when `.env` only sets secrets (e.g. ORS_API_KEY).
+# Override with ALLOWED_HOSTS in production.
+_DEFAULT_ALLOWED_HOSTS = "127.0.0.1,localhost,truck-log-md5t.onrender.com"
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv("ALLOWED_HOSTS", "truck-log-md5t.onrender.com").split(",")
+    for host in os.getenv("ALLOWED_HOSTS", _DEFAULT_ALLOWED_HOSTS).split(",")
     if host.strip()
 ]
 
