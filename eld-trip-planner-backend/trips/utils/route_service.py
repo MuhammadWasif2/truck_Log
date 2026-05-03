@@ -21,6 +21,19 @@ def _safe_json(response):
     except ValueError:
         return {}
 
+
+def _ors_error_message(data):
+    """ORS may return `error` as an object with `message`, or as a plain string."""
+    if not isinstance(data, dict):
+        return None
+    err = data.get("error")
+    if isinstance(err, dict):
+        return err.get("message") or str(err)
+    if isinstance(err, str):
+        return err
+    return data.get("message")
+
+
 def get_coordinates(location):
     ors_key = _require_ors_key()
     params = {
@@ -35,8 +48,7 @@ def get_coordinates(location):
     if response.status_code != 200:
         data = data if isinstance(data, dict) else {}
         message = (
-            data.get("error", {}).get("message")
-            or data.get("message")
+            _ors_error_message(data)
             or response.text[:300]
             or "Unknown error"
         )
@@ -85,7 +97,7 @@ def get_route(start, end):
                 "geometry": routes[0]["geometry"]
             }
 
-    last_message = (data.get("error", {}).get("message") if isinstance(data, dict) else None) or (
+    last_message = _ors_error_message(data) or (
         response.text[:300] if response is not None else None
     )
     detail = f" Last response: HTTP {getattr(response, 'status_code', 'unknown')}."
